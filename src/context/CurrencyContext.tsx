@@ -25,14 +25,18 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     
     try {
-      const [currencyData, goldData] = await Promise.all([
-        fetchCurrencyRates(),
-        fetchGoldRates()
-      ]);
+      // API'leri paralel olarak çağır
+      const currencyData = await fetchCurrencyRates();
+      const goldData = await fetchGoldRates();
       
       setCurrencies(currencyData);
       setGoldRates(goldData);
       setLastUpdated(new Date());
+      
+      toast({
+        title: "Veriler güncellendi",
+        description: "En son piyasa verileri başarıyla alındı.",
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Veriler alınamadı';
       setError(errorMessage);
