@@ -29,19 +29,12 @@ const Header = () => {
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-1">
+        <nav className="flex items-center space-x-1">
           <Button variant="ghost" size="sm">Anasayfa</Button>
           <Button variant="ghost" size="sm">Döviz Kurları</Button>
           <Button variant="ghost" size="sm">Altın Fiyatları</Button>
           <Button variant="ghost" size="sm">Hakkında</Button>
         </nav>
-
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="hidden sm:flex">
-            Giriş Yap
-          </Button>
-          <Button size="sm">Üye Ol</Button>
-        </div>
       </div>
     </header>
   );
