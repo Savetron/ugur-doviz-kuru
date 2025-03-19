@@ -1,8 +1,10 @@
 
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Header from '@/components/Header';
 import ExchangeTable from '@/components/ExchangeTable';
 import { CurrencyProvider } from '@/context/CurrencyContext';
+import SeoContent from '@/components/SeoContent';
 
 const Index = () => {
   // Sayfa ilk açıldığında yumuşak kaydırma animasyonu
@@ -15,6 +17,26 @@ const Index = () => {
 
   return (
     <CurrencyProvider>
+      <Helmet>
+        <title>Canlı Döviz ve Altın Kurları | Güncel Finansal Veriler</title>
+        <meta name="description" content="Türkiye'nin en güncel döviz kurları ve altın fiyatları. USD, EUR, GBP ve diğer para birimlerinin canlı kurlarını takip edin." />
+        <link rel="canonical" href="https://dovizkurucanli.com" />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "FinancialProduct",
+              "name": "Güncel Döviz ve Altın Kurları",
+              "description": "Türkiye'nin en hızlı ve güncel döviz kuru ve altın fiyatları takip platformu",
+              "provider": {
+                "@type": "Organization",
+                "name": "dovizkurucanli.com"
+              }
+            }
+          `}
+        </script>
+      </Helmet>
+      
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-muted/50">
         <Header />
         
@@ -38,6 +60,7 @@ const Index = () => {
         <main className="flex-1 pb-20 px-4">
           <div className="max-w-7xl mx-auto">
             <ExchangeTable />
+            <SeoContent />
           </div>
         </main>
 
@@ -45,7 +68,7 @@ const Index = () => {
         <footer className="py-8 px-4 bg-white/50 backdrop-blur-sm border-t">
           <div className="max-w-7xl mx-auto text-center">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} FinansPlus. Tüm hakları saklıdır.
+              © {new Date().getFullYear()} dovizkurucanli.com. Tüm hakları saklıdır.
             </p>
             <p className="text-xs mt-2 text-muted-foreground/80">
               Buradaki bilgiler bilgilendirme amaçlıdır, yatırım tavsiyesi değildir.
