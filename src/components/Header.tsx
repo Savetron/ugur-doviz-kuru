@@ -25,7 +25,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <div className="text-primary font-semibold text-xl tracking-tight">
-            FinansPlus
+            Canlı Döviz Kuru
           </div>
         </div>
 
