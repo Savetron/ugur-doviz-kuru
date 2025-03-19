@@ -25,12 +25,14 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     
     try {
-      // API'leri paralel olarak çağır
+      // Önce döviz kurlarını çek
       const currencyData = await fetchCurrencyRates();
-      const goldData = await fetchGoldRates();
-      
       setCurrencies(currencyData);
+      
+      // Sonra altın fiyatlarını çek
+      const goldData = await fetchGoldRates();
       setGoldRates(goldData);
+      
       setLastUpdated(new Date());
       
       toast({
