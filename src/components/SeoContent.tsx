@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ArrowRight } from 'lucide-react';
 
 const SeoContent = () => {
   return (
@@ -27,13 +28,31 @@ const SeoContent = () => {
           </p>
         </div>
         
-        <div>
-          <h3 className="text-xl font-bold mb-3 text-primary">Neden dovizkurucanli.com?</h3>
+        <div className="gold-prices-section">
+          <h3 className="text-xl font-bold mb-3 text-primary">Altın Fiyatları Neden Değişir?</h3>
+          <p className="mb-3">
+            Altın fiyatları, küresel ekonomik belirsizlikler, siyasi gelişmeler, merkez bankalarının politikaları, enflasyon oranları ve dolar kurundaki değişimler gibi birçok faktörden etkilenir. dovizkurucanli.com olarak, gram altın, çeyrek altın, yarım altın ve tam altın fiyatlarını anlık olarak takip edebilir, yatırım kararlarınızı daha bilinçli bir şekilde alabilirsiniz.
+          </p>
+        </div>
+        
+        <div className="about-section" id="about-section">
+          <h3 className="text-xl font-bold mb-3 text-primary">Hakkımızda</h3>
+          <p className="mb-3">
+            <strong>dovizkurucanli.com</strong>, Türkiye'nin önde gelen finansal veri platformlarından biridir. 7/24 güncellenen döviz kurları, altın fiyatları ve diğer finansal verileri en doğru ve hızlı şekilde kullanıcılarımıza sunmayı amaçlıyoruz.
+          </p>
+          <p className="mb-3">
+            Platformumuz, yatırımcılardan ekonomi meraklılarına, iş insanlarından uluslararası ticarete kadar geniş bir kullanıcı kitlesine hitap etmektedir. Kullanıcı dostu arayüzümüz ve güvenilir veri kaynaklarımızla, finansal piyasalardaki gelişmeleri anında takip etmenizi sağlıyoruz.
+          </p>
+          <p className="mb-3">
+            <strong>Neden dovizkurucanli.com?</strong>
+          </p>
           <ul className="list-disc pl-5 space-y-2">
             <li><strong>Anlık Veriler:</strong> En güncel döviz ve altın fiyatlarını saniye saniye takip edin.</li>
             <li><strong>Kullanıcı Dostu Arayüz:</strong> Kolay ve anlaşılır bir arayüz ile tüm finansal verilere hızlıca ulaşın.</li>
             <li><strong>Mobil Uyumluluk:</strong> Döviz kurlarını ve altın fiyatlarını her cihazdan rahatlıkla takip edin.</li>
             <li><strong>Güvenilir Veri Kaynakları:</strong> Tüm verilerimiz güvenilir finansal API'lerden anlık olarak alınmaktadır.</li>
+            <li><strong>7/24 Erişim:</strong> Türkiye ve dünya finans piyasalarındaki gelişmeleri dilediğiniz zaman takip edin.</li>
+            <li><strong>Ücretsiz Hizmet:</strong> Tüm finansal verilerimize ücretsiz olarak erişebilirsiniz.</li>
           </ul>
         </div>
         
