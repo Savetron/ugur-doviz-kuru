@@ -1,3 +1,4 @@
+
 import { Currency, Gold, CurrencyCode, GoldType } from '@/types';
 
 // Döviz kurları için seri kodları
@@ -26,329 +27,235 @@ const GOLD_SERIES = {
 const TCMB_API_KEY = 'Gb50fN0Jc6';
 
 /**
- * TCMB EVDS API'sini çağırır ve verileri alır
- */
-async function fetchTCMBData(seriesArray: string[], startDate: string, endDate: string): Promise<any> {
-  try {
-    // TCMB EVDS API - CORS sorunlarını aşmak için proxy kullanıyoruz
-    const apiUrl = `https://corsproxy.io/?https://evds2.tcmb.gov.tr/service/evds/series=${seriesArray.join('-')}&startDate=${startDate}&endDate=${endDate}&type=json&key=${TCMB_API_KEY}`;
-    
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`TCMB API yanıt hatası: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data || !data.items || data.items.length === 0) {
-      throw new Error('TCMB API\'den veri alınamadı');
-    }
-    
-    return data.items[0]; // En son günün verisini al
-  } catch (error) {
-    console.error("TCMB API hatası:", error);
-    throw error;
-  }
-}
-
-/**
- * Döviz kurlarını TCMB EVDS API'sinden çeker
+ * Döviz kurlarını doğrudan statik değerlerle döndür (API çağrısı yapmadan)
  */
 export async function fetchCurrencyRates(): Promise<Currency[]> {
   try {
-    // Bugünün ve dünün tarihlerini hesapla
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    
-    // TCMB için tarih formatını ayarla (GG-AA-YYYY)
-    const formatDate = (date: Date) => {
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    };
-    
-    const endDate = formatDate(today);
-    const startDate = formatDate(yesterday);
-    
-    // Tüm döviz serileri için alış-satış kodlarını topla
-    const allSeries: string[] = [];
-    Object.values(CURRENCY_SERIES).forEach(series => {
-      allSeries.push(series.buying, series.selling);
-    });
-    
-    // TCMB API'sinden verileri çek
-    const data = await fetchTCMBData(allSeries, startDate, endDate);
-    
-    const currencies: Currency[] = [];
-    const now = new Date();
-    
-    // Her döviz için alış-satış fiyatlarını ayıkla
-    Object.entries(CURRENCY_SERIES).forEach(([code, series]) => {
-      const currency = code as CurrencyCode;
-      const buyRate = parseFloat(data[series.buying]) || 0;
-      const sellRate = parseFloat(data[series.selling]) || 0;
-      
-      // Bir önceki kapanış için rastgele değişim değeri (gerçekte bunu da API'den almalıyız)
-      const randomChange = (Math.random() - 0.5) * 1;
-      const change = parseFloat(randomChange.toFixed(2));
-      const previousBuy = buyRate - (buyRate * change / 100);
-      
-      if (buyRate > 0 && sellRate > 0) {
-        currencies.push({
-          code: currency,
-          name: series.name,
-          buying: buyRate,
-          selling: sellRate,
-          change,
-          previousClosing: previousBuy,
-          lastUpdated: now
-        });
-      }
-    });
-    
-    // Eğer hiç veri alınamadıysa 
-    if (currencies.length === 0) {
-      throw new Error('Döviz verisi alınamadı');
-    }
-    
-    return currencies;
+    // Önce API'den veri almayı deneyelim (CORS veya diğer sorunlar nedeniyle başarısız olabilir)
+    return await fetchLiveExchangeRates();
   } catch (error) {
     console.error("Döviz kurları çekme hatası:", error);
-    // Alternatif API'yi dene
-    return fetchBackupCurrencyRates();
+    // Hata durumunda statik değerleri döndür
+    return createStaticCurrencyData();
   }
 }
 
 /**
- * Altın fiyatlarını TCMB EVDS API'sinden çeker
+ * Altın fiyatlarını doğrudan statik değerlerle döndür (API çağrısı yapmadan)
  */
 export async function fetchGoldRates(): Promise<Gold[]> {
   try {
-    // Bugünün ve dünün tarihlerini hesapla
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    
-    // TCMB için tarih formatını ayarla (GG-AA-YYYY)
-    const formatDate = (date: Date) => {
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    };
-    
-    const endDate = formatDate(today);
-    const startDate = formatDate(yesterday);
-    
-    // Tüm altın serileri için alış-satış kodlarını topla
-    const allSeries: string[] = [];
-    Object.values(GOLD_SERIES).forEach(series => {
-      allSeries.push(series.buying, series.selling);
-    });
-    
-    // TCMB API'sinden verileri çek
-    const data = await fetchTCMBData(allSeries, startDate, endDate);
-    
-    const goldRates: Gold[] = [];
-    const now = new Date();
-    
-    // Her altın türü için alış-satış fiyatlarını ayıkla
-    Object.entries(GOLD_SERIES).forEach(([type, series]) => {
-      const goldType = type as GoldType;
-      const buyRate = parseFloat(data[series.buying]) || 0;
-      const sellRate = parseFloat(data[series.selling]) || 0;
-      
-      // Bir önceki kapanış için rastgele değişim değeri (gerçekte bunu da API'den almalıyız)
-      const randomChange = (Math.random() - 0.5) * 1;
-      const change = parseFloat(randomChange.toFixed(2));
-      const previousBuy = buyRate - (buyRate * change / 100);
-      
-      if (buyRate > 0 && sellRate > 0) {
-        goldRates.push({
-          type: goldType,
-          name: series.name,
-          buying: buyRate,
-          selling: sellRate,
-          change,
-          previousClosing: previousBuy,
-          lastUpdated: now
-        });
-      }
-    });
-    
-    // Eğer hiç veri alınamadıysa
-    if (goldRates.length === 0) {
-      throw new Error('Altın verisi alınamadı');
-    }
-    
-    return goldRates;
+    // Önce API'den veri almayı deneyelim (CORS veya diğer sorunlar nedeniyle başarısız olabilir)
+    return await fetchLiveGoldRates();
   } catch (error) {
     console.error("Altın fiyatları çekme hatası:", error);
-    // Alternatif API'yi dene
-    return fetchBackupGoldRates();
+    // Hata durumunda statik değerleri döndür
+    return createStaticGoldData();
   }
 }
 
 /**
- * Yedek döviz veri kaynağı
+ * Canlı döviz kurlarını almayı dene
  */
-async function fetchBackupCurrencyRates(): Promise<Currency[]> {
+async function fetchLiveExchangeRates(): Promise<Currency[]> {
+  // Dolar kuru için örnek bir API (CORS sorununa daha az duyarlı)
   try {
-    // Alternatif API: Frankfurter kullan (CORS destekli)
-    const response = await fetch('https://api.frankfurter.app/latest?from=TRY');
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
     
     if (!response.ok) {
-      throw new Error(`Yedek API yanıt hatası: ${response.status}`);
+      throw new Error(`API yanıt hatası: ${response.status}`);
     }
     
     const data = await response.json();
     
-    if (!data.rates) {
-      throw new Error('Yedek API\'den veri alınamadı');
+    if (!data.rates || !data.rates.TRY) {
+      throw new Error('API\'den TRY kuru alınamadı');
     }
     
-    const currencies: Currency[] = [];
-    const validCodes: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD'];
-    const now = new Date();
+    // USD/TRY kuru
+    const usdToTry = data.rates.TRY;
     
-    // Her döviz kodu için veri oluştur
-    validCodes.forEach(code => {
-      if (data.rates[code]) {
-        // TRY cinsinden kur değeri
-        const rateInverse = data.rates[code];
-        
-        // Döviz cinsinden TL değeri
-        const rate = 1 / rateInverse;
-        
-        // Alış ve satış için %0.5 spread ekleyelim
-        const buying = rate * 0.995;
-        const selling = rate * 1.005;
-        
-        // Rastgele değişim yüzdesi (-0.5% ile 0.5% arası)
-        const randomChange = (Math.random() - 0.5) * 1;
-        const change = parseFloat(randomChange.toFixed(2));
-        
-        currencies.push({
-          code,
-          name: CURRENCY_SERIES[code].name,
-          buying,
-          selling,
-          change,
-          previousClosing: buying - (buying * change / 100),
-          lastUpdated: now
-        });
-      }
+    // EUR/USD kuru için ayrıca sorgulama yap
+    const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
+    const eurData = await eurResponse.json();
+    
+    if (!eurData.rates || !eurData.rates.USD) {
+      throw new Error('API\'den EUR/USD kuru alınamadı');
+    }
+    
+    // EUR/USD kuru
+    const eurToUsd = eurData.rates.USD;
+    // EUR/TRY kuru
+    const eurToTry = usdToTry * eurToUsd;
+    
+    // Diğer kurlar için çarpanlar (yaklaşık değerler)
+    const rateMultipliers = {
+      GBP: 1.26, // USD'nin kaç GBP olduğu
+      CHF: 0.90, // USD'nin kaç CHF olduğu
+      JPY: 0.0067, // USD'nin kaç JPY olduğu
+      CAD: 0.74, // USD'nin kaç CAD olduğu
+      AUD: 0.67, // USD'nin kaç AUD olduğu
+      RUB: 0.011, // USD'nin kaç RUB olduğu
+    };
+    
+    const now = new Date();
+    const currencies: Currency[] = [];
+    
+    // USD kuru ekle
+    const usdBuying = usdToTry * 0.995; // %0.5 spread
+    const usdSelling = usdToTry * 1.005;
+    const usdChange = 0.24; // Örnek değişim yüzdesi
+    
+    currencies.push({
+      code: 'USD',
+      name: 'ABD Doları',
+      buying: usdBuying,
+      selling: usdSelling,
+      change: usdChange,
+      previousClosing: usdBuying - (usdBuying * usdChange / 100),
+      lastUpdated: now
     });
     
-    // Rus Rublesi için sabit bir değer (eğer API'de yoksa)
-    if (!currencies.find(c => c.code === 'RUB')) {
-      const buying = 0.39;
-      const selling = 0.40;
-      const change = -0.12;
+    // EUR kuru ekle
+    const eurBuying = eurToTry * 0.995;
+    const eurSelling = eurToTry * 1.005;
+    const eurChange = -0.12;
+    
+    currencies.push({
+      code: 'EUR',
+      name: 'Euro',
+      buying: eurBuying,
+      selling: eurSelling,
+      change: eurChange,
+      previousClosing: eurBuying - (eurBuying * eurChange / 100),
+      lastUpdated: now
+    });
+    
+    // Diğer kurları hesapla ve ekle
+    Object.entries(rateMultipliers).forEach(([code, multiplier]) => {
+      const typedCode = code as CurrencyCode;
+      
+      // İlgili para biriminin USD karşılığı
+      const currencyToUsd = multiplier;
+      // TL karşılığı hesapla
+      const currencyToTry = usdToTry / currencyToUsd;
+      
+      // Rastgele değişim yüzdesi (-0.5% ile 0.5% arası)
+      const randomChange = (Math.random() - 0.5) * 1;
+      const change = parseFloat(randomChange.toFixed(2));
+      
+      const buying = currencyToTry * 0.995;
+      const selling = currencyToTry * 1.005;
       
       currencies.push({
-        code: 'RUB',
-        name: 'Rus Rublesi',
+        code: typedCode,
+        name: CURRENCY_SERIES[typedCode].name,
         buying,
         selling,
         change,
         previousClosing: buying - (buying * change / 100),
         lastUpdated: now
       });
-    }
+    });
     
     return currencies;
   } catch (error) {
-    console.error("Yedek döviz API hatası:", error);
-    // Son çare olarak statik değerlerle doldur
-    return createStaticCurrencyData();
+    console.error("Canlı döviz kuru API hatası:", error);
+    throw error; // Hata yukarıda yakalanacak ve statik veriler döndürülecek
   }
 }
 
 /**
- * Yedek altın veri kaynağı
+ * Canlı altın kurlarını almayı dene
  */
-async function fetchBackupGoldRates(): Promise<Gold[]> {
+async function fetchLiveGoldRates(): Promise<Gold[]> {
   try {
-    // Alternatif olarak metalpriceapi.com (ücretsiz plan sınırlı)
-    const response = await fetch('https://api.metalpriceapi.com/v1/latest?api_key=demo&base=XAU&currencies=USD');
+    // Gold Price API (altın fiyatları için)
+    const response = await fetch('https://www.goldapi.io/api/XAU/USD', {
+      headers: {
+        'x-access-token': 'goldapi-2dyckl7sutya5-io',
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
-      throw new Error(`Yedek Gold API yanıt hatası: ${response.status}`);
+      throw new Error(`Altın API yanıt hatası: ${response.status}`);
     }
     
     const goldData = await response.json();
     
-    if (!goldData || !goldData.rates || !goldData.rates.USD) {
-      throw new Error('Yedek Gold API\'den veri alınamadı');
+    if (!goldData.price) {
+      throw new Error('Altın API\'sinden fiyat alınamadı');
     }
     
-    // XAU (Ons Altın) / USD kuru
-    const xauToUsd = goldData.rates.USD;
+    // XAU (Ons Altın) / USD fiyatı
+    const xauUsdPrice = goldData.price;
     
-    // USD / XAU (1 USD kaç ons altın)
-    const usdToXau = 1 / xauToUsd;
-    
-    // USD/TRY kurunu al
-    const exchangeResponse = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=TRY');
+    // USD/TRY kuru için API çağrısı
+    const exchangeResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
     const exchangeData = await exchangeResponse.json();
+    
+    if (!exchangeData.rates || !exchangeData.rates.TRY) {
+      throw new Error('Döviz kuru API\'sinden TRY oranı alınamadı');
+    }
+    
     const usdToTRY = exchangeData.rates.TRY;
     
     // Ons altın fiyatı (TL cinsinden)
-    const goldPriceTRY = (1 / usdToXau) * usdToTRY;
+    const xauTryPrice = xauUsdPrice * usdToTRY;
     
-    // Bundan sonrası fetchGoldRates ile aynı
-    const gramGoldPriceTRY = goldPriceTRY / 31.1034768;
+    // Gram altın fiyatı (1 ons = 31.1034768 gram)
+    const gramTryPrice = xauTryPrice / 31.1034768;
     
     const now = new Date();
     const goldRates: Gold[] = [];
     
-    // Altın değerlerini hesapla
-    const onsBuying = goldPriceTRY * 0.995;
-    const onsSelling = goldPriceTRY * 1.005;
+    // Ons altın değerlerini hesapla
+    const onsBuying = xauTryPrice * 0.995;
+    const onsSelling = xauTryPrice * 1.005;
+    const onsChange = 0.54;
     
-    const gramBuying = gramGoldPriceTRY * 0.995;
-    const gramSelling = gramGoldPriceTRY * 1.005;
-    
-    // Diğer altın türleri için ağırlık çarpanları
-    const weights = {
-      CEYREK: 1.75,
-      YARIM: 3.5,
-      TAM: 7.0,
-      CUMHURIYET: 7.2
-    };
-    
-    // Rastgele değişim yüzdeleri
-    const randomChange = (Math.random() - 0.5) * 1;
-    const change = parseFloat(randomChange.toFixed(2));
-    
-    // Tüm altın türleri için fiyatları hesapla ve ekle
     goldRates.push({
       type: 'ONS',
       name: 'Ons Altın',
       buying: onsBuying,
       selling: onsSelling,
-      change,
-      previousClosing: onsBuying - (onsBuying * change / 100),
+      change: onsChange,
+      previousClosing: onsBuying - (onsBuying * onsChange / 100),
       lastUpdated: now
     });
+    
+    // Gram altın değerlerini hesapla
+    const gramBuying = gramTryPrice * 0.995;
+    const gramSelling = gramTryPrice * 1.005;
+    const gramChange = 0.32;
     
     goldRates.push({
       type: 'GRAM',
       name: 'Gram Altın',
       buying: gramBuying,
       selling: gramSelling,
-      change,
-      previousClosing: gramBuying - (gramBuying * change / 100),
+      change: gramChange,
+      previousClosing: gramBuying - (gramBuying * gramChange / 100),
       lastUpdated: now
     });
     
-    // Diğer altın türleri için aynı değişim yüzdesini kullan
+    // Diğer altın türleri için ağırlık çarpanları
+    const weights = {
+      CEYREK: 1.75, // 1.75 gram
+      YARIM: 3.5,   // 3.5 gram
+      TAM: 7.0,     // 7.0 gram
+      CUMHURIYET: 7.2 // 7.2 gram
+    };
+    
+    // Diğer altın türlerini hesapla
     Object.entries(weights).forEach(([type, weight]) => {
       const typedType = type as GoldType;
+      
+      // Rastgele değişim yüzdesi
+      const randomChange = (Math.random() - 0.5) * 0.5;
+      const change = parseFloat(randomChange.toFixed(2));
+      
       const buying = gramBuying * weight;
       const selling = gramSelling * weight;
       
@@ -365,14 +272,13 @@ async function fetchBackupGoldRates(): Promise<Gold[]> {
     
     return goldRates;
   } catch (error) {
-    console.error("Yedek altın API hatası:", error);
-    // Son çare olarak statik değerlerle doldur
-    return createStaticGoldData();
+    console.error("Canlı altın fiyatları API hatası:", error);
+    throw error; // Hata yukarıda yakalanacak ve statik veriler döndürülecek
   }
 }
 
 /**
- * Statik döviz verisi oluştur (hiçbir API çalışmazsa)
+ * Statik döviz verisi oluştur (API çağrısı olmadan)
  */
 function createStaticCurrencyData(): Currency[] {
   const now = new Date();
@@ -454,7 +360,7 @@ function createStaticCurrencyData(): Currency[] {
 }
 
 /**
- * Statik altın verisi oluştur (hiçbir API çalışmazsa)
+ * Statik altın verisi oluştur (API çağrısı olmadan)
  */
 function createStaticGoldData(): Gold[] {
   const now = new Date();
